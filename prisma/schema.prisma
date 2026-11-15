@@ -1,0 +1,162 @@
+// Bookla database — the source of truth.
+// Production: Postgres on Neon (DATABASE_URL = pooled, DATABASE_URL_UNPOOLED = direct, for migrations).
+// Local development: `npm run dev` / `npm run db:reset` generate prisma/dev.sqlite.prisma from this file
+// (same models, SQLite provider) so you can work offline without Postgres.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DATABASE_URL_UNPOOLED")
+}
+
+// Business owner account (logs into /dashboard).
+model Owner {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  name         String
+  lang         String    @default("tr") // language for WhatsApp messages to the owner
+  createdAt    DateTime  @default(now())
+  sessions     Session[]
+  business     Business?
+}
+
+// Login session. `id` is the SHA-256 of the cookie token, never the token itself.
+model Session {
+  id        String   @id
+  ownerId   String
+  owner     Owner    @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([ownerId])
+}
+
+model Business {
+  id           String    @id @default(cuid())
+  slug         String    @unique
+  name         String
+  category     String // see src/lib/catalog.ts
+  city         String // see src/lib/catalog.ts
+  area         String    @default("")
+  address      String    @default("")
+  phone        String // WhatsApp number, digits with country code, e.g. 905331234567
+  about        String    @default("")
+  languages    String    @default("TR,EN") // comma separated: TR,EN,RU
+  color        String    @default("#0F5257")
+  // booking rules
+  slotStep     Int       @default(30) // minutes between possible start times
+  minNoticeMin Int       @default(60) // how soon before start a client may book
+  maxDaysAhead Int       @default(30)
+  capacity     Int       @default(1) // parallel bookings when the business has no staff (tables, cars…)
+  cancelHours  Int       @default(2) // client may cancel online until N hours before
+  // subscription (the only revenue model: businesses pay monthly, clients book for free)
+  plan         String    @default("trial") // trial | solo | salon
+  trialEndsAt  DateTime
+  paidUntil    DateTime?
+  published    Boolean   @default(true)
+  // demo / imported rating until real reviews exist
+  rating       Float?
+  ratingCount  Int       @default(0)
+  ownerId      String?   @unique
+  owner        Owner?    @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  createdAt    DateTime  @default(now())
+  services     Service[]
+  staff        Staff[]
+  hours        WorkingHours[]
+  bookings     Booking[]
+  notifications Notification[]
+
+  @@index([category, city])
+}
+
+model Service {
+  id          String    @id @default(cuid())
+  businessId  String
+  business    Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  nameTr      String
+  nameEn      String    @default("")
+  nameRu      String    @default("")
+  durationMin Int
+  price       Int // Turkish lira, 0 = free (e.g. restaurant table)
+  active      Boolean   @default(true)
+  sort        Int       @default(0)
+  bookings    Booking[]
+
+  @@index([businessId])
+}
+
+model Staff {
+  id         String    @id @default(cuid())
+  businessId String
+  business   Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  name       String
+  active     Boolean   @default(true)
+  sort       Int       @default(0)
+  bookings   Booking[]
+
+  @@index([businessId])
+}
+
+// One row per open interval. A weekday with no rows is a day off.
+model WorkingHours {
+  id         String   @id @default(cuid())
+  businessId String
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  weekday    Int // 0 = Sunday … 6 = Saturday
+  openMin    Int // minutes from midnight, local time (Asia/Famagusta)
+  closeMin   Int
+
+  @@index([businessId, weekday])
+}
+
+model Booking {
+  id            String   @id @default(cuid())
+  token         String   @unique // secret for the client's manage link /booking/<token>
+  businessId    String
+  business      Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  serviceId     String
+  service       Service  @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+  staffId       String?
+  staff         Staff?   @relation(fields: [staffId], references: [id], onDelete: SetNull)
+  date          String // YYYY-MM-DD, local
+  startMin      Int
+  endMin        Int
+  startsAt      DateTime // UTC instant of the start
+  customerName  String
+  customerPhone String
+  note          String   @default("")
+  lang          String   @default("tr")
+  status        String   @default("confirmed") // pending | confirmed | cancelled | completed | no_show
+  cancelledBy   String? // client | business
+  price         Int
+  source        String   @default("online") // online | manual
+  reminderSentAt DateTime? // set by /api/cron/reminders
+  createdAt     DateTime @default(now())
+
+  @@index([businessId, date])
+  @@index([status, startsAt])
+  @@index([staffId, date])
+}
+
+// Outbox for WhatsApp messages. Without API keys messages are stored as "skipped".
+model Notification {
+  id         String    @id @default(cuid())
+  businessId String
+  business   Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  bookingId  String?
+  channel    String    @default("whatsapp")
+  to         String
+  kind       String // booking_new_owner | booking_confirmed_client | booking_cancelled_client | booking_cancelled_owner
+  body       String
+  status     String    @default("queued") // queued | sent | failed | skipped
+  error      String?
+  createdAt  DateTime  @default(now())
+  sentAt     DateTime?
+
+  @@index([businessId, createdAt])
+}

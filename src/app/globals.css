@@ -1,0 +1,268 @@
+@import "tailwindcss";
+
+/*
+  Bookla — painted harbour board.
+  Cobalt enamel, white keylines, chalk-yellow times, navy lettering on white.
+  Yellow never carries text on white; red is the single stamp per screen and the danger colour.
+*/
+@theme {
+  --color-board: #1238a6;
+  --color-board-deep: #0c2a80;
+  --color-board-tint: #e6ecfa;
+  --color-board-ink: #c9d6f7;
+  --color-ink: #071a44;
+  --color-muted: #4a587b;
+  --color-paper: #f3f5fa;
+  --color-surface: #ffffff;
+  --color-line: #d5dcec;
+  --color-rule: #8492b4;
+  --color-chalk: #ffd338;
+  --color-chalk-deep: #f2be0c;
+  --color-chalk-tint: #fff4c7;
+  --color-stamp: #d9301a;
+  --color-stamp-deep: #b92513;
+  --color-ok: #1a7f45;
+  --color-ok-ink: #11602f;
+  --color-ok-tint: #ddf1e4;
+  --color-danger: #b92513;
+  --color-danger-tint: #fbe3df;
+
+  --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-sign), "Arial Narrow", sans-serif;
+
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --shadow-panel: 0 14px 34px -18px rgb(7 26 68 / 0.35);
+  --shadow-sheet: 0 -18px 50px -20px rgb(7 26 68 / 0.45);
+}
+
+html {
+  background: var(--color-paper);
+  scrollbar-color: var(--color-rule) transparent;
+}
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  caret-color: var(--color-board);
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+::selection {
+  background: var(--color-chalk);
+  color: var(--color-ink);
+}
+/* Two-tone ring: navy reads on white enamel, yellow reads on the cobalt board. */
+@layer base {
+  :focus-visible {
+    outline: 3px solid var(--color-chalk);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 2px var(--color-ink);
+  }
+}
+a {
+  text-underline-offset: 0.2em;
+}
+
+/* Shared building blocks. Use them together with Tailwind utilities. */
+@layer components {
+  .container-app {
+    @apply mx-auto w-full max-w-5xl px-5 sm:px-8;
+  }
+
+  /* Sign lettering: tall condensed capitals for headlines, times and prices. */
+  .sign {
+    font-family: var(--font-display);
+    font-weight: 900;
+    line-height: 0.88;
+    letter-spacing: 0;
+    text-transform: uppercase;
+    font-variant-numeric: tabular-nums;
+  }
+  .sign-sm {
+    font-family: var(--font-display);
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: 0.01em;
+    text-transform: uppercase;
+    font-variant-numeric: tabular-nums;
+  }
+  .num {
+    font-family: var(--font-display);
+    font-weight: 900;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Cobalt board with a painted white keyline. */
+  .board {
+    @apply rounded-[22px] border-2 border-white bg-board text-white;
+  }
+  /* White enamel panel. */
+  .card {
+    @apply rounded-[18px] border border-line bg-surface;
+  }
+  .panel {
+    @apply rounded-[22px] bg-surface text-ink;
+    box-shadow: var(--shadow-panel);
+  }
+
+  .btn {
+    @apply inline-flex h-12 items-center justify-center gap-2 rounded-xl px-5 text-[15px] font-extrabold whitespace-nowrap transition duration-150 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-45;
+  }
+  .btn-primary {
+    @apply bg-board text-white hover:bg-board-deep;
+  }
+  .btn-chalk {
+    @apply bg-chalk text-ink hover:bg-chalk-deep;
+  }
+  .btn-stamp {
+    @apply bg-stamp text-white hover:bg-stamp-deep;
+  }
+  .btn-ghost {
+    @apply bg-board-tint text-board hover:bg-[#d6e0f7];
+  }
+  .btn-line {
+    @apply border-[1.5px] border-rule bg-surface text-ink hover:border-ink;
+  }
+  .btn-onboard {
+    @apply border-2 border-white text-white hover:bg-white hover:text-board;
+  }
+  .btn-danger {
+    @apply border-[1.5px] border-danger/45 bg-surface text-danger hover:bg-danger-tint;
+  }
+  .btn-sm {
+    @apply h-10 rounded-[10px] px-3.5 text-sm;
+  }
+  .btn-lg {
+    @apply h-14 rounded-[14px] px-6 text-[17px];
+  }
+
+  .input {
+    @apply h-12 w-full rounded-xl border-[1.5px] border-rule bg-surface px-3.5 text-base text-ink transition outline-none placeholder:text-[#6f7c9c] focus:border-board focus:ring-[3px] focus:ring-board/25 focus-visible:shadow-none focus-visible:outline-none;
+  }
+  textarea.input {
+    @apply h-auto min-h-24 py-3;
+  }
+  select.input {
+    @apply appearance-none pr-10;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23071A44' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
+    background-size: 18px;
+    background-position: right 12px center;
+    background-repeat: no-repeat;
+  }
+  .label {
+    @apply mb-1.5 block text-[13px] font-bold text-muted;
+  }
+
+  .chip {
+    @apply inline-flex h-7 items-center gap-1.5 rounded-full bg-board-tint px-2.5 text-[12.5px] font-bold whitespace-nowrap text-board;
+  }
+  .chip-chalk {
+    @apply bg-chalk text-ink;
+  }
+  .chip-gray {
+    @apply bg-[#e9edf6] text-muted;
+  }
+  .chip-ok {
+    @apply bg-ok-tint text-ok-ink;
+  }
+  .chip-danger {
+    @apply bg-danger-tint text-danger;
+  }
+
+  .h-section {
+    font-family: var(--font-display);
+    font-weight: 900;
+    font-size: 1.875rem;
+    line-height: 0.95;
+    text-transform: uppercase;
+    text-wrap: balance;
+  }
+  /* Page title inside the owner's office: the same lettering, at working size. */
+  .h-page {
+    font-family: var(--font-display);
+    font-weight: 900;
+    font-size: 2.5rem;
+    line-height: 0.92;
+    text-transform: uppercase;
+    text-wrap: balance;
+  }
+  /* Turkish capitals carry dots and cedillas (İ, Ş, Ç, Ğ): stacked lines need more air or the marks collide. */
+  :lang(tr) .sign {
+    line-height: 0.98;
+  }
+  :lang(tr) .h-section,
+  :lang(tr) .h-page {
+    line-height: 1.04;
+  }
+  /* Ruled rows of a price list. */
+  .rows > * + * {
+    border-top: 1px solid var(--color-line);
+  }
+  .rows-board > * + * {
+    border-top: 2px solid #fff;
+  }
+  /* Rubber stamp of the ticket desk: the status of a booking. */
+  .stamp-mark {
+    display: inline-block;
+    max-width: 10rem;
+    padding: 0.35rem 0.6rem 0.3rem;
+    border: 2.5px solid currentColor;
+    border-radius: 8px;
+    transform: rotate(-6deg);
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 1.0625rem;
+    line-height: 1;
+    letter-spacing: 0.02em;
+    text-align: center;
+    text-transform: uppercase;
+    text-wrap: balance;
+  }
+  /* Where the cobalt board meets the paper: the paper rises with rounded shoulders. */
+  .shore {
+    position: relative;
+    height: 1.75rem;
+    margin-bottom: -1px;
+    border-radius: 28px 28px 0 0;
+    background: var(--color-paper);
+  }
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes sheetUp {
+  from { transform: translateY(48px); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+@keyframes pop {
+  0% { transform: scale(0.4) rotate(-14deg); opacity: 0; }
+  100% { transform: scale(1) rotate(-6deg); opacity: 1; }
+}
+/* The one authored moment: board rows are lettered in one after another. */
+@keyframes rowIn {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .row-in {
+    animation: rowIn 0.6s var(--ease-out-expo) both;
+    animation-delay: calc(var(--i, 0) * 60ms + 60ms);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}

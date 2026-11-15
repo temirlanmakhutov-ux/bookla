@@ -1,0 +1,9 @@
+{
+  "name": "Bookla — online randevu",
+  "short_name": "Bookla",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1238A6",
+  "theme_color": "#1238A6",
+  "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}

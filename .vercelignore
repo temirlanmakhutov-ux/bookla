@@ -1,0 +1,10 @@
+# never upload local secrets or the local SQLite database
+.env
+.env.*
+!.env.example
+prisma/dev.db
+prisma/dev.db-journal
+prisma/dev.sqlite.prisma
+.next
+node_modules
+.claude
